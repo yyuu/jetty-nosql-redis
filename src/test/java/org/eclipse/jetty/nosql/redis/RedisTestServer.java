@@ -65,8 +65,8 @@ public class RedisTestServer extends AbstractTestServer
                 e.printStackTrace();
             }
             
-            _idManager.setScavengeDelay(_scavengePeriod * 1000);
-            _idManager.setScavengePeriod(_maxInactivePeriod);
+            _idManager.setScavengeDelay((int) TimeUnit.SECONDS.toMillis(_scavengePeriod));
+            _idManager.setScavengePeriod((int) TimeUnit.SECONDS.toMillis(_maxInactivePeriod));
             _idManager.setWorkerName("node0");
             
             try
@@ -87,7 +87,7 @@ public class RedisTestServer extends AbstractTestServer
             _idManager = new RedisSessionIdManager(_server, "127.0.0.1:6379");
             
             _idManager.setScavengeDelay((int)TimeUnit.SECONDS.toMillis(_scavengePeriod));
-            _idManager.setScavengePeriod(_maxInactivePeriod);
+            _idManager.setScavengePeriod((int)TimeUnit.SECONDS.toMillis(_maxInactivePeriod));
             _idManager.setDefaultExpiry(300);
             _idManager.setKeyPrefix("RedisTestServer::");
             
