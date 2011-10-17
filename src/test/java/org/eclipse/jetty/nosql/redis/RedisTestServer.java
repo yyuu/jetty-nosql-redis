@@ -13,30 +13,22 @@ package org.eclipse.jetty.nosql.redis;
 // You may elect to redistribute this code under either of these licenses. 
 // ========================================================================
 
-
-
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jetty.nosql.memcached.MemcachedTestServer;
 import org.eclipse.jetty.nosql.redis.RedisSessionIdManager;
 import org.eclipse.jetty.nosql.redis.RedisSessionManager;
 import org.eclipse.jetty.server.SessionIdManager;
 import org.eclipse.jetty.server.SessionManager;
-import org.eclipse.jetty.server.session.AbstractTestServer;
-import org.eclipse.jetty.server.session.SessionHandler;
-
 
 /**
  * @version $Revision$ $Date$
  */
-public class RedisTestServer extends AbstractTestServer
+public class RedisTestServer extends MemcachedTestServer
 {
-    
-    static RedisSessionIdManager _idManager;
-    private boolean _saveAllAttributes = false; // false save dirty, true save all
-    
     public RedisTestServer(int port)
     {
-        super(port, 30, 10);
+        super(port);
     }
 
     public RedisTestServer(int port, int maxInactivePeriod, int scavengePeriod)
@@ -47,13 +39,15 @@ public class RedisTestServer extends AbstractTestServer
     
     public RedisTestServer(int port, int maxInactivePeriod, int scavengePeriod, boolean saveAllAttributes)
     {
-        super(port, maxInactivePeriod, scavengePeriod);
-        
-        _saveAllAttributes = saveAllAttributes;
+        super(port, maxInactivePeriod, scavengePeriod, saveAllAttributes);
     }
 
-    public SessionIdManager newSessionIdManager()
+    @Override
+    public SessionIdManager newSessionIdManager(String config)
     {
+        if (config == null) {
+            config = "127.0.0.1:6379";
+        }
         if ( _idManager != null )
         {
             try
@@ -65,8 +59,7 @@ public class RedisTestServer extends AbstractTestServer
                 e.printStackTrace();
             }
             
-            _idManager.setScavengeDelay((int) TimeUnit.SECONDS.toMillis(_scavengePeriod));
-            _idManager.setScavengePeriod((int) TimeUnit.SECONDS.toMillis(_maxInactivePeriod));
+            _idManager.setScavengePeriod((int) TimeUnit.SECONDS.toMillis(_scavengePeriod));
             _idManager.setWorkerName("node0");
             
             try
@@ -84,11 +77,9 @@ public class RedisTestServer extends AbstractTestServer
         try
         {
             System.err.println("RedisTestServer:SessionIdManager:" + _maxInactivePeriod + "/" + _scavengePeriod);
-            _idManager = new RedisSessionIdManager(_server, "127.0.0.1:6379");
+            _idManager = new RedisSessionIdManager(_server, config);
             
-            _idManager.setScavengeDelay((int)TimeUnit.SECONDS.toMillis(_scavengePeriod));
-            _idManager.setScavengePeriod((int)TimeUnit.SECONDS.toMillis(_maxInactivePeriod));
-            _idManager.setDefaultExpiry(300);
+            _idManager.setScavengePeriod((int)TimeUnit.SECONDS.toMillis(_scavengePeriod));
             _idManager.setKeyPrefix("RedisTestServer::");
             
             return _idManager;
@@ -117,24 +108,4 @@ public class RedisTestServer extends AbstractTestServer
         //manager.setScavengePeriod((int)TimeUnit.SECONDS.toMillis(_scavengePeriod));
         return manager;
     }
-
-    public SessionHandler newSessionHandler(SessionManager sessionManager)
-    {
-        return new SessionHandler(sessionManager);
-    }
-    
-    public static void main(String... args) throws Exception
-    {
-        RedisTestServer server8080 = new RedisTestServer(8080);
-        server8080.addContext("/").addServlet(SessionDump.class,"/");
-        server8080.start();
-        
-        RedisTestServer server8081 = new RedisTestServer(8081);
-        server8081.addContext("/").addServlet(SessionDump.class,"/");
-        server8081.start();
-        
-        server8080.join();
-        server8081.join();
-    }
-
 }
